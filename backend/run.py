@@ -1,200 +1,228 @@
-from flask import Flask, request, jsonify, g
+# type: ignore
+from flask import Flask, request, jsonify, redirect
 from flask_cors import CORS
-from authlib.integrations.flask_client import OAuth
-import sqlite3
-import os
-import uuid
-from datetime import timedelta
 from dotenv import load_dotenv
-import shutil
-import logging
-from config import Config
+from loguru import logger
+from file_manager import FileManager, FileExistsError
+from user_manager import UserManager, OAuthConfigError
+from datetime import timedelta
+import os
 
-# Load environment variables
 load_dotenv()
-
 app = Flask(__name__)
-app.config.from_object(Config)
-
-CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": "*"}})
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-DATABASE = Config.DATABASE
-STORAGE_DIR = Config.STORAGE_DIR
-
-def get_db():
-    db = getattr(g, "_database", None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
-
-@app.teardown_appcontext
-def close_connection(exception):
-    db = getattr(g, "_database", None)
-    if db is not None:
-        db.close()
-
-def init_db():
-    with app.app_context():
-        db = get_db()
-        with app.open_resource("schema.sql", mode="r") as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
-if not os.path.exists(DATABASE):
-    init_db()
-    logger.info(f"Database '{DATABASE}' created successfully.")
-
-os.makedirs(os.path.join(STORAGE_DIR, "temp"), exist_ok=True)
-
-# Authentication
-oauth = OAuth(app)
-oauth.register(
-    name="github",
-    client_id=Config.GITHUB_CLIENT_ID,
-    client_secret=Config.GITHUB_CLIENT_SECRET,
-    access_token_url="https://github.com/login/oauth/access_token",
-    access_token_params=None,
-    authorize_url="https://github.com/login/oauth/authorize",
-    authorize_params=None,
-    api_base_url="https://api.github.com/",
-    client_kwargs={"scope": "user:email read:user"},
-)
-oauth.register(
-    name="google",
-    client_id=Config.GOOGLE_CLIENT_ID,
-    client_secret=Config.GOOGLE_CLIENT_SECRET,
-    server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
-    client_kwargs={
-        "scope": "openid email profile",
-        "prompt": "select_account"
-    }
+CORS(
+    app,
+    resources={
+        r"/api/*": {
+            "origins": "http://localhost:3000",
+            "supports_credentials": True,
+        }
+    },
+    supports_credentials=True,
 )
 
-def get_user_storage_path(user_id, is_temporary=False):
-    storage_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, f"user_{user_id}"))
-    if is_temporary:
-        return os.path.join(STORAGE_DIR, "temp", storage_uuid)
-    return os.path.join(STORAGE_DIR, storage_uuid)
+app.config["SESSION_COOKIE_SECURE"] = True
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=7)
 
-def create_user_storage(user_id, is_temporary=False):
-    storage_path = get_user_storage_path(user_id, is_temporary)
-    os.makedirs(storage_path, exist_ok=True)
-    return storage_path
+app.secret_key = os.environ.get("WORKSTATION_SECRET_KEY")
+workspace_root = os.environ.get("WORKSPACE_ROOT")
 
-@app.route("/api/auth/<provider>")
-def oauth_authorize(provider):
-    if provider not in ["github", "google"]:
-        return jsonify(error="Invalid provider"), 400
-    client = oauth.create_client(provider)
-    redirect_uri = request.args.get('redirect_uri')
-    return client.authorize_redirect(redirect_uri)
+file_manager = FileManager(workspace_root)
+try:
+    user_manager = UserManager(app, workspace_root)
+except OAuthConfigError as e:
+    logger.error(f"Error initializing UserManager: {e}")
+    user_manager = None
 
-@app.route("/api/auth/<provider>/callback")
-def oauth_callback(provider):
-    if provider not in ["github", "google"]:
-        return jsonify({"error": "Invalid provider"}), 400
 
+@app.before_request
+def initialize_session():
+    if user_manager:
+        user_manager.initialize_session()
+
+
+@app.route("/api/login/github")
+def login_github():
+    logger.debug("Entering login_github route")
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
     try:
-        token = oauth.create_client(provider).authorize_access_token()
+        logger.debug("Calling user_manager.login_github()")
+        return user_manager.login_github()
+    except OAuthConfigError as e:
+        logger.error(f"GitHub login is not configured: {str(e)}")
+        return jsonify({"error": "GitHub login is not configured"}), 503
     except Exception as e:
-        logger.error(f"Error obtaining access token from {provider}: {str(e)}")
-        return jsonify({"error": "Authentication failed"}), 400
+        logger.error(f"Unexpected error during GitHub login: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
-    if provider == "github":
-        resp = oauth.create_client(provider).get("user", token=token)
-        user_info = resp.json()
-        avatar_url = user_info.get("avatar_url")
-        email = user_info.get("email")
-        if email is None:
-            email_resp = oauth.create_client(provider).get("user/emails", token=token)
-            email = next((email["email"] for email in email_resp.json() if email["primary"]), None)
-    elif provider == "google":
-        resp = oauth.create_client(provider).get("https://www.googleapis.com/oauth2/v2/userinfo", token=token)
-        user_info = resp.json()
-        avatar_url = user_info.get("picture")
-        email = user_info.get("email")
+
+@app.route("/api/auth/github/callback")
+def github_callback():
+    logger.debug("Entering github_callback route")
+    logger.debug(f"Request args: {request.args}")
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    try:
+        logger.debug("Calling user_manager.github_authorize()")
+        user_id = user_manager.github_authorize()
+        logger.info(f"Authorized GitHub user: {user_id}")
+        return redirect("http://localhost:3000")  # Redirect to your React app
+    except OAuthConfigError as e:
+        logger.error(f"GitHub authorization failed: {str(e)}")
+        return jsonify({"error": str(e)}), 503
+    except Exception as e:
+        logger.error(f"Unexpected error during GitHub authorization: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route("/api/login/google")
+def login_google():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    try:
+        resp = user_manager.login_google()
+        logger.info("Redirecting to Google login")
+        return resp
+    except OAuthConfigError:
+        logger.error("Google login is not configured")
+        return jsonify({"error": "Google login is not configured"}), 503
+    except Exception as e:
+        logger.error(f"Unexpected error during GitHub login: {str(e)}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+@app.route("/api/auth/google/callback")
+def google_callback():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    try:
+        user_id = user_manager.google_authorize()
+        logger.info(f"Authorized Google user: {user_id}")
+        return redirect("http://localhost:3000")  # Redirect to your React app
+    except OAuthConfigError:
+        logger.error("Google authorization failed")
+        return jsonify({"error": "Google authorization failed"}), 503
+
+
+@app.route("/api/logout", methods=["POST"])
+def logout():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    logout_user_id = user_manager.logout()
+    if logout_user_id:
+        logger.info(f"Logged out user: {logout_user_id}")
+        return jsonify({"message": "Logged out successfully"})
     else:
-        return jsonify({"error": "Unsupported provider"}), 400
+        logger.info("Logout attempt for guest user")
+        return jsonify({"message": "Guest users cannot log out"}), 400
 
-    # db = get_db()
-    # user = db.execute(
-    #     "SELECT * FROM users WHERE provider_id = ? AND provider = ?",
-    #     (user_info.get("id"), provider),
-    # ).fetchone()
 
-    # if user is None:
-    #     logger.info(f"Creating new user with {provider} account")
-    #     db.execute(
-    #         "INSERT INTO users (provider_id, provider, username, email, avatar_url) VALUES (?, ?, ?, ?, ?)",
-    #         (
-    #             user_info.get("id"),
-    #             provider,
-    #             user_info.get("login") or user_info.get("name"),
-    #             email,
-    #             avatar_url,
-    #         ),
-    #     )
-    #     db.commit()
-    #     user = db.execute(
-    #         "SELECT * FROM users WHERE provider_id = ? AND provider = ?",
-    #         (user_info.get("id"), provider),
-    #     ).fetchone()
-    # else:
-    #     logger.info(f"User with {provider} account already exists")
-    #     db.execute(
-    #         "UPDATE users SET avatar_url = ? WHERE id = ?",
-    #         (avatar_url, user["id"]),
-    #     )
-    #     db.commit()
+@app.route("/api/user/info", methods=["GET"])
+def get_user_info():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    user_info = user_manager.get_user_info()
+    logger.info(f"Retrieved user info: {user_info}")
+    return jsonify(user_info)
 
-    user_storage_path = create_user_storage(str(user["id"]))
-    logger.info(f"Created storage path at: {user_storage_path}")
 
-    return jsonify({
-        "message": f"Successfully authenticated with {provider.capitalize()}",
-        "user_id": user["id"],
-        "username": user["username"],
-        "email": user["email"],
-        "avatar_url": avatar_url,
-        "storage_path": user_storage_path,
-    })
+@app.route("/api/files", methods=["GET"])
+def list_files():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    user_id = user_manager.get_user_id()
+    files = file_manager.list_files(user_id)
+    logger.info(f"Listed files for user {user_id}: {files}")
+    return jsonify(files)
 
-@app.route("/api/user/<user_id>")
-def get_user(user_id):
-    db = get_db()
-    user = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    if user:
-        return jsonify({
-            "user_id": user["id"],
-            "username": user["username"],
-            "email": user["email"],
-            "avatar_url": user["avatar_url"],
-            "storage_path": get_user_storage_path(user["id"]),
-            "is_guest": False
-        })
-    else:
-        # If no authenticated user found, return guest user info
-        guest_id = user_id  # Assuming the frontend sends a generated guest ID
-        return jsonify({
-            "user_id": guest_id,
-            "storage_path": get_user_storage_path(guest_id, is_temporary=True),
-            "is_guest": True
-        })
 
-@app.errorhandler(404)
-def not_found_error(error):
-    return jsonify({"error": "Resource not found"}), 404
+@app.route("/api/files", methods=["POST"])
+def create_file():
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    if "file" not in request.files:
+        logger.error("No file part in the request")
+        return jsonify({"error": "No file part"}), 400
+    file = request.files["file"]
+    user_id = user_manager.get_user_id()
+    try:
+        filename = file_manager.create_file(user_id, file)
+        logger.info(f"Created file {filename} for user {user_id}")
+        return (
+            jsonify(
+                {"message": "File created successfully", "filename": filename}
+            ),
+            201,
+        )
+    except ValueError as e:
+        logger.error(f"ValueError while creating file: {str(e)}")
+        return jsonify({"error": str(e)}), 400
+    except FileExistsError as e:
+        logger.error(f"FileExistsError while creating file: {str(e)}")
+        return jsonify({"error": str(e)}), 409  # 409 Conflict
 
-@app.errorhandler(500)
-def internal_error(error):
-    db = get_db()
-    db.rollback()
-    return jsonify({"error": "Internal server error"}), 500
+
+@app.route("/api/files/<filename>", methods=["GET"])
+def read_file(filename):
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    user_id = user_manager.get_user_id()
+    try:
+        content = file_manager.read_file(user_id, filename)
+        logger.info(f"Read file {filename} for user {user_id}")
+        return jsonify({"filename": filename, "content": content})
+    except FileNotFoundError:
+        logger.error(f"File {filename} not found for user {user_id}")
+        return jsonify({"error": "File not found"}), 404
+
+
+@app.route("/api/files/<filename>", methods=["PUT"])
+def update_file(filename):
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    content = request.json.get("content", "")
+    user_id = user_manager.get_user_id()
+    try:
+        file_manager.update_file(user_id, filename, content)
+        logger.info(f"Updated file {filename} for user {user_id}")
+        return jsonify({"message": "File updated successfully"})
+    except FileNotFoundError:
+        logger.error(
+            f"File {filename} not found for user {user_id} during update"
+        )
+        return jsonify({"error": "File not found"}), 404
+
+
+@app.route("/api/files/<filename>", methods=["DELETE"])
+def delete_file(filename):
+    if not user_manager:
+        logger.error("User management is not available")
+        return jsonify({"error": "User management is not available"}), 503
+    user_id = user_manager.get_user_id()
+    try:
+        file_manager.delete_file(user_id, filename)
+        logger.info(f"Deleted file {filename} for user {user_id}")
+        return jsonify({"message": "File deleted successfully"})
+    except FileNotFoundError:
+        logger.error(
+            f"File {filename} not found for user {user_id} during deletion"
+        )
+        return jsonify({"error": "File not found"}), 404
+
 
 if __name__ == "__main__":
-    app.run(debug=Config.DEBUG)
+    logger.info("Starting the Flask application")
+    app.run(debug=True)
