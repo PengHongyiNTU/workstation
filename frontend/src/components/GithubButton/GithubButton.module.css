@@ -1,0 +1,51 @@
+.githubButton {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    height: 32px;
+    padding: 0 8px;
+    background-color: #f6f8fa;
+    border: 1px solid rgba(27, 31, 36, 0.15);
+    border-radius: 6px;
+    transition: background-color 0.2s;
+  }
+  
+
+  .githubButton span {
+    display: flex;
+    align-items: center;
+  }
+  
+  .githubIcon {
+    margin-right: 4px;
+  }
+
+  .divider {
+    height: 16px;
+    margin: 0 8px;
+    border-left: 2px solid #d1d5da;
+  }
+  
+  .starIcon {
+    font-size: 12px;
+    margin-right: 2px;
+  }
+  
+  .starCount {
+    font-weight: 600;
+  }
+  
+  /* Override Ant Design Button styles */
+  .githubButton:global(.ant-btn) {
+    box-shadow: none;
+  }
+  
+  .githubButton:global(.ant-btn:hover),
+  .githubButton:global(.ant-btn:focus) {
+    color: inherit;
+    border-color: rgba(27, 31, 36, 0.15);
+  }
+  
+  .githubButton:global(.ant-btn > .anticon + span) {
+    margin-left: 0;
+  }

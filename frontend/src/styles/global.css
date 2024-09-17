@@ -1,0 +1,42 @@
+:root {
+    --primary-color: #54A258;
+    --background-color: #F0F7F1;
+    --text-color: #333333;
+    --border-color: #E0E0E0;
+    --shadow-color: rgba(0, 0, 0, 0.1);
+  }
+
+
+body {
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+      'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    margin: 0;
+    padding: 0;
+  }
+
+  .ant-btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }
+  
+  .ant-btn-primary:hover,
+  .ant-btn-primary:focus {
+    background-color: #468c4a;
+    border-color: #468c4a;
+  }
+  
+  .ant-input:focus,
+  .ant-input-focused {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(84, 162, 88, 0.2);
+  }
+  
+  .ant-checkbox-checked .ant-checkbox-inner {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+  }

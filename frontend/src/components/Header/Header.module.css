@@ -1,0 +1,53 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background-color: #fff;
+  position: relative;
+  height: 64px;
+}
+
+.headerSpace {
+  display: flex;
+  align-items: center;
+  z-index: 1;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo img {
+  height: 32px;
+}
+
+/* Add this new style for the GitHub button container */
+.githubButtonContainer {
+  margin-right: 16px;
+}
+
+.menu {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.menu :global(.ant-menu-horizontal) {
+  border-bottom: none;
+  background: transparent;
+}
+
+.menu :global(.ant-menu-item) {
+  padding: 0 20px !important;
+  margin: 0 4px;
+  top: 0;
+}
+
+/* Rest of your existing styles... */
