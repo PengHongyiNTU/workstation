@@ -1,6 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Layout, Menu, theme } from "antd";
-import styles from "./Sider.module.css";
 
 const { Sider } = Layout;
 
@@ -75,16 +74,16 @@ const AppSider = () => {
       style={{
         background: token.colorBgContainer,
         borderRight: `1px solid ${token.colorBorder}`,
+        height: "100vh",
       }}
       theme="light"
-      className={styles.sider}
+      trigger={null}
     >
       <Menu
         mode="inline"
         theme="light"
         defaultSelectedKeys={["Canvas"]}
         items={menuItems}
-        className={styles.menu}
       />
     </Sider>
   );

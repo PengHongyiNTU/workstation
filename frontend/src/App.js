@@ -40,13 +40,13 @@ const App = () => {
           <ProjectProvider>
             <Router>
               <Layout style={{ height: '100vh' }}>
+                <AppHeader />
                 <Layout>
-                  <AppHeader />
                   <Content>
                     <AppRoutes />
                   </Content>
-                  <AppFooter />
                 </Layout>
+                <AppFooter />
               </Layout>
             </Router>
           </ProjectProvider>

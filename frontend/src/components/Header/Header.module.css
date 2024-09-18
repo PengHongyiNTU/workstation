@@ -6,6 +6,7 @@
   background-color: #fff;
   position: relative;
   height: 64px;
+  border-bottom: "1px solid";
 }
 
 .headerSpace {
