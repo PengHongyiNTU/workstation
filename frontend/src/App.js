@@ -5,7 +5,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { ProjectProvider, useProject } from './contexts/ProjectContext';
 import AppHeader from './components/Header/Header';
 import AppFooter from './components/Footer/Footer';
-import Canvas from './pages/Canvas/Canvas';
+import Canvas from './pages/Workstation/Workstation';
 import Home from './pages/HomePage/Home';
 
 import "./styles/global.css";
