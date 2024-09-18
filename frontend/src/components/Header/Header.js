@@ -5,6 +5,7 @@ import styles from "./Header.module.css";
 import GithubButton from "../GithubButton/GithubButton";
 import { useAuth } from "../../contexts/AuthContext";
 
+
 const { Header } = Layout;
 
 const AppHeader = ({ currentProject }) => {
@@ -13,7 +14,7 @@ const AppHeader = ({ currentProject }) => {
     const navItems = [
         {
             key: 'home',
-            icon: <HomeOutlined />,
+            icon: <HomeOutlined/>,
             label: 'Home',
         },
         {
@@ -64,19 +65,7 @@ const AppHeader = ({ currentProject }) => {
             <div className={styles.headerSpace}>
                 <GithubButton repo="modelscope/agentscope"/>
                 <Space size="small">
-                    {loading ? (
-                        <Button icon={<UserOutlined />} loading>Loading</Button>
-                    ) : user ? (
-                        <Dropdown menu={{ items: userMenu }} placement="bottomRight">
-                            <Avatar src={user.avatar} icon={<UserOutlined />} />
-                        </Dropdown>
-                    ) : (
-                        <Dropdown menu={{ items: loginDropDown }} placement="bottomRight">
-                            <Button icon={<UserOutlined />}>
-                                Login <DownOutlined />
-                            </Button>
-                        </Dropdown>
-                    )}
+                   
                 </Space>
             </div>
         </Header>

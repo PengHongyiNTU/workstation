@@ -1,5 +1,12 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import api from '../utils/api';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000';
+
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+});
 
 const AuthContext = createContext(null);
 
@@ -8,51 +15,48 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    checkUserSession();
   }, []);
 
-  const login = async (provider) => {
+  const checkUserSession = async () => {
     try {
-      const response = await api.get(`/auth/${provider}`);
-      window.open(response.data.authUrl, 'OAuth', 'width=500,height=600');
-
-      return new Promise((resolve, reject) => {
-        window.addEventListener('message', async (event) => {
-          if (event.data && event.data.user_id) {
-            const userData = event.data;
-            setUser(userData);
-            localStorage.setItem('user', JSON.stringify(userData));
-            resolve(userData);
-          } else if (event.data && event.data.error) {
-            console.error('Login failed:', event.data.error);
-            reject(new Error(event.data.error));
-          }
-        }, { once: true });
-      });
+      const response = await api.get('/api/user/info');
+      setUser(response.data);
     } catch (error) {
-      console.error('Failed to initiate login:', error);
-      throw error;
+      console.error('Failed to fetch user info:', error);
+      setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('user');
+  const login = (provider) => {
+    window.location.href = `${API_URL}/api/login/${provider}`;
   };
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+  const logout = async () => {
+    try {
+      await api.post('/api/logout');
+      setUser(null);
+    } catch (error) {
+      console.error('Failed to logout:', error);
+    }
+  };
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    loading,
+    login,
+    logout
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
