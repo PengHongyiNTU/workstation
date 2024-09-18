@@ -9,8 +9,10 @@ const AppFooter = () => {
     const { token } = theme.useToken();
     return (
         <Footer style={{
-            backgroundColor: '#F0F7F1',
+            background: "trasparent",
             textAlign: "center",
+            background: token.colorBgContainer,
+            borderTop: `1px solid ${token.colorBorder}`
         }}>
                 <Title level={4} style={{ color: token.colorPrimary }}>
                     Join the community

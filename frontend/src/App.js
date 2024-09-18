@@ -39,12 +39,12 @@ const App = () => {
         <AuthProvider>
           <ProjectProvider>
             <Router>
-              <Layout style={{ height: '100vh' }}>
+              <Layout style={{ minHeight: "100vh" }}>
                 <AppHeader />
                 <Layout>
-                  <Content>
-                    <AppRoutes />
-                  </Content>
+                <Content>
+                  <AppRoutes />
+                </Content>
                 </Layout>
                 <AppFooter />
               </Layout>
