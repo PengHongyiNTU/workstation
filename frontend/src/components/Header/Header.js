@@ -1,6 +1,6 @@
 import React from "react";
 import { Layout, Menu, Space } from "antd";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import styles from "./Header.module.css";
 import GithubButton from "../GithubButton/GithubButton";
 import UserProfile from "../UserProfile/UserProfile";
@@ -14,7 +14,7 @@ const AppHeader = () => {
     const navigate = useNavigate();
 
     const handleNavigation = (key) => {
-        if (key === '/canvas' && !currentProject) {
+        if (key === '/workspace' && !currentProject) {
             // Do nothing or show a message that a project needs to be opened first
             return;
         }
@@ -28,13 +28,13 @@ const AppHeader = () => {
             icon: <span className="material-symbols-outlined">home</span>,
         },
         {
-            key: '/canvas',
-            label: 'Canvas',
-            icon: <span className="material-symbols-outlined">automation</span>,
+            key: '/workspace',
+            label: 'Workspace',
+            icon: <span className="material-symbols-outlined">desk</span>,
             disabled: !currentProject,
         },
     ];
-    
+
     return (
         <Header className={styles.header}>
             <div className={styles.headerSpace}>
@@ -43,8 +43,8 @@ const AppHeader = () => {
                 </div>
             </div>
 
-            <Menu 
-                mode="horizontal" 
+            <Menu
+                mode="horizontal"
                 selectedKeys={[location.pathname]}
                 items={navItems}
                 onClick={({ key }) => handleNavigation(key)}
@@ -53,8 +53,8 @@ const AppHeader = () => {
 
             <div className={styles.headerSpace}>
                 <Space>
-                <UserProfile />
-                <GithubButton repo="modelscope/agentscope"/>
+                    <UserProfile />
+                    <GithubButton repo="modelscope/agentscope" />
                 </Space>
             </div>
         </Header>

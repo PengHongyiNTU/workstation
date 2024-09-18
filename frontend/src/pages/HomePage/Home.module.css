@@ -59,7 +59,7 @@
     margin-bottom: 16px;
   }
   
-  /* Override Ant Design styles */
+  /* Global styles */
   :global(.ant-card-actions) {
     background-color: #f0f2f5 !important;
   }

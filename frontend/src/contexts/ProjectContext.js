@@ -18,7 +18,9 @@ export const ProjectProvider = ({ children }) => {
 
     useEffect(() => {
         if (!user) {
-            closeProject();
+            setCurrentProject(null);
+            setProjectContent(null);
+            setError(null);
         }
     }, [user]);
 

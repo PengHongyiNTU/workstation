@@ -1,34 +1,30 @@
-import React, { useState, useCallback, useEffect, useRef} from "react";
-import { Layout, Menu, theme} from "antd";
+import React, { useState, useCallback, useEffect, useRef } from "react";
+import { Layout, Menu, theme } from "antd";
+import styles from "./Sider.module.css";
 
 const { Sider } = Layout;
 
 const menuItems = [
   {
-    key: "explore",
-    label: "Explore",
-    icon: <span className="material-symbols-outlined">travel_explore</span>,
-  },
-  {
-    key: "studio",
-    label: "Studio",
+    key: "Canvas",
+    label: "Canvas",
     icon: <span className="material-symbols-outlined">automation</span>,
   },
   {
-    key: "knowledge",
-    label: "Knowledge",
-    icon: <span className="material-symbols-outlined">psychology</span>,
+    key: "Logs",
+    label: "Logs",
+    icon: <span className="material-symbols-outlined">terminal</span>,
+    disabled: true,
   },
   {
-    key: "tools",
-    label: "Tools",
-    icon: (
-      <span className="material-symbols-outlined">home_repair_service</span>
-    ),
+    key: "analytics",
+    label: "Analytics",
+    icon: <span className="material-symbols-outlined">analytics</span>,
+    disabled: true,
   },
 ];
 
-const COLAPSE_TIMEOUT = 500;
+const COLLAPSE_TIMEOUT = 500;
 
 const AppSider = () => {
   const [collapsed, setCollapsed] = useState(false);
@@ -39,7 +35,7 @@ const AppSider = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
-    timerRef.current = setTimeout(() => setCollapsed(true), COLAPSE_TIMEOUT);
+    timerRef.current = setTimeout(() => setCollapsed(true), COLLAPSE_TIMEOUT);
   }, []);
 
   const handleMouseEnter = useCallback(() => {
@@ -51,7 +47,7 @@ const AppSider = () => {
 
   const handleMouseLeave = useCallback(() => {
     startCollapseTimer();
-}, [startCollapseTimer]);
+  }, [startCollapseTimer]);
 
   const handleCollapse = useCallback((value) => {
     setCollapsed(value);
@@ -59,7 +55,6 @@ const AppSider = () => {
       startCollapseTimer();
     }
   }, [startCollapseTimer]);
-
 
   useEffect(() => {
     startCollapseTimer();
@@ -70,11 +65,6 @@ const AppSider = () => {
     };
   }, [startCollapseTimer]);
 
-  
-
-
-
-
   return (
     <Sider
       collapsible
@@ -82,16 +72,20 @@ const AppSider = () => {
       onCollapse={handleCollapse}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      style={{ background: token.colorPrimary, 
-                BorderRight: "1px solid #f0f0f0"
+      style={{
+        background: token.colorBgContainer,
+        borderRight: `1px solid ${token.colorBorder}`,
       }}
       theme="light"
+      className={styles.sider}
     >
       <Menu
         mode="inline"
         theme="light"
-        defaultSelectedKeys={["studio"]}
-        items={menuItems}/>
+        defaultSelectedKeys={["Canvas"]}
+        items={menuItems}
+        className={styles.menu}
+      />
     </Sider>
   );
 };

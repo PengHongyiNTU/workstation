@@ -10,14 +10,13 @@ const AppFooter = () => {
     return (
         <Footer style={{
             background: "trasparent",
-           textAlign: "center",
+            textAlign: "center",
         }}>
-            <div style={{ maxWidth: "1200px", margin: "0 auto" }}>
-                <Title level={3} style={{ color: token.colorPrimary }}>
+                <Title level={4} style={{ color: token.colorPrimary }}>
                     Join the community
                 </Title>
                 <Space size="large" align="center">
-                    <Paragraph style={{ margin: 0, flex: 1 }}>
+                    <Paragraph style={{ margin: 0, flex: 1, fontSize:"14px" }}>
                         Discuss with team members, contributors and developers on different
                         channels.
                     </Paragraph>
@@ -27,7 +26,7 @@ const AppFooter = () => {
                         rel="noreferrer noopener"
                     >
                         <DiscordOutlined
-                            style={{ fontSize: "24px", color: token.colorPrimary }}
+                            style={{ fontSize: "20px", color: token.colorPrimary }}
                         />
                     </a>
                     <a
@@ -36,11 +35,10 @@ const AppFooter = () => {
                         rel="noreferrer noopener"
                     >
                         <DingtalkOutlined
-                            style={{ fontSize: "24px", color: token.colorPrimary }}
+                            style={{ fontSize: "20px", color: token.colorPrimary }}
                         />
                     </a>
                 </Space>
-            </div>
         </Footer>
     );
 };

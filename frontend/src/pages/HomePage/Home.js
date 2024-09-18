@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Modal, Input, message, Spin, Typography, Space, App } from 'antd';
+import { Card, Button, Modal, Input, message, Spin, Typography, Space, Layout } from 'antd';
 import { PlusOutlined, DeleteOutlined, FileOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useProject } from '../../contexts/ProjectContext';
@@ -14,6 +14,7 @@ const api = axios.create({
 });
 
 const { Title, Text } = Typography;
+const { Content } = Layout;
 
 const HomePage = () => {
   const { user, loading: authLoading } = useAuth();
@@ -34,7 +35,7 @@ const HomePage = () => {
     if (projectError) {
       message.error(projectError);
     }
-  }, [projectError, message]);
+  }, [projectError]);
 
   const fetchFiles = async () => {
     setFetchingFiles(true);
@@ -61,7 +62,8 @@ const HomePage = () => {
       message.success('File created successfully');
       setIsModalVisible(false);
       setNewFileName('');
-      fetchFiles();
+      await fetchFiles();
+      await handleOpenProject(newFileName);
     } catch (error) {
       console.error('Error creating file:', error);
       message.error('Failed to create file');
@@ -82,7 +84,7 @@ const HomePage = () => {
   const handleOpenProject = async (filename) => {
     try {
       await openProject(filename);
-      navigate('/canvas');
+      navigate('/workspace');
     } catch (error) {
       console.error('Error opening project:', error);
       message.error('Failed to open project');
@@ -117,9 +119,9 @@ const HomePage = () => {
       className={styles.newProjectCard}
       onClick={() => setIsModalVisible(true)}
     >
-      <Space align='center'>
-      <PlusOutlined className={styles.plusIcon} />
-      <Title level={4}>Create New Project</Title>
+      <Space direction="vertical" align="center">
+        <PlusOutlined className={styles.plusIcon} />
+        <Title level={4}>Create New Project</Title>
       </Space>
     </Card>
   );
@@ -133,7 +135,7 @@ const HomePage = () => {
   }
 
   return (
-    <App>
+    <Content>
       <div className={styles.homePage}>
         <Title className={styles.welcome}>Welcome, {user.user_name || 'User'}!</Title>
         {fetchingFiles || projectLoading ? (
@@ -159,7 +161,7 @@ const HomePage = () => {
           />
         </Modal>
       </div>
-    </App>
+    </Content>
   );
 };
 

@@ -18,7 +18,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route
-        path="/canvas"
+        path="/workspace"
         element={currentProject ? <Canvas project={currentProject} /> : <Navigate to="/" />}
       />
       <Route path="*" element={<Navigate to="/" />} />
@@ -39,7 +39,7 @@ const App = () => {
         <AuthProvider>
           <ProjectProvider>
             <Router>
-              <Layout style={{ minHeight: '100vh' }}>
+              <Layout style={{ height: '100vh' }}>
                 <Layout>
                   <AppHeader />
                   <Content>

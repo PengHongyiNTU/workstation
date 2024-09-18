@@ -1,15 +1,14 @@
-import React, { useCallback } from 'react';
-import { Card } from 'antd';
-import {
-    ReactFlow,
-    MiniMap,
-    Controls,
-    Background,
-    useNodesState,
-    useEdgesState,
-    addEdge,
-  } from '@xyflow/react';
+import React, { useEffect } from 'react';
+import { Layout, Typography, Spin, message, Breadcrumb, Card } from 'antd';
+import { useProject } from '../../contexts/ProjectContext';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import AppSider from '../../components/Sider/Sider';
+import { ReactFlow } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+
+const { Content } = Layout;
+const { Title, Paragraph } = Typography;
 
 const initialNodes = [
   { id: '1', position: { x: 0, y: 0 }, data: { label: '1' } },
@@ -18,39 +17,55 @@ const initialNodes = [
 
 const initialEdges = [{ id: 'e1-2', source: '1', target: '2' }];
 
-const AppCanvas = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+const Canvas = () => {
+  const { currentProject, projectContent, loading, error } = useProject();
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
-  );
+  useEffect(() => {
+    if (!currentProject) {
+      navigate('/');
+    }
+  }, [currentProject, navigate]);
+
+  useEffect(() => {
+    if (error) {
+      message.error(error);
+    }
+  }, [error]);
+
+  if (loading) {
+    return <Spin size="large" />;
+  }
+
+  if (!currentProject || !projectContent) {
+    return null;
+  }
+
+  const breadcrumbItems = [{
+    title: user?.user_name || 'User'
+  },
+  { title: currentProject }]
 
   return (
-    <Card 
-      style={{ 
-        margin: '24px 16px', 
-        height: 'calc(100vh - 112px)', // Adjust based on your header and footer heights
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}
-      styls={{ height: '100%', padding: 0 }}
-    >
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        style={{ width: '100%', height: '100%' }}
-      >
-        <Controls />
-        <MiniMap />
-        <Background variant="dots" gap={12} size={1} />
-      </ReactFlow>
-    </Card>
+    <Layout >
+      <AppSider />
+      <Layout>
+        <Breadcrumb style={{ margin: '16px 5px' }} items={breadcrumbItems} />
+        <Content>
+          <Title level={2}>{currentProject}</Title>
+          <Card style={{ width: '100%', height: 400, marginBottom: 24 }}>
+            <div style={{ width: '100%', height: '100%' }}>
+              <ReactFlow nodes={initialNodes} edges={initialEdges} />
+            </div>
+          </Card>
+          <Card>
+            <Paragraph>{projectContent}</Paragraph>
+          </Card>
+        </Content>
+      </Layout>
+    </Layout>
   );
 };
 
-export default AppCanvas;
+export default Canvas;
