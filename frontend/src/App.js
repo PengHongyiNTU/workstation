@@ -21,6 +21,7 @@ const App = () => {
       // Example API call (replace with your actual API endpoint)
       const response = await fetch(`/api/auth/${provider}`);
       const userData = await response.json();
+      
       setUser(userData);
     } catch (error) {
       console.error('Login failed:', error);

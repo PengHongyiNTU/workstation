@@ -1,0 +1,76 @@
+.homePage {
+    padding: 24px;
+    background-color: #f0f2f5;
+    min-height: calc(100vh - 64px); /* Adjust based on your header height */
+  }
+  
+  .welcome {
+    color: #54A258 !important;
+    margin-bottom: 24px;
+  }
+  
+  .projectGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+  }
+  
+  .projectCard {
+    height: 100%;
+    box-shadow: 0 1px 2px -2px rgba(0, 0, 0, 0.16), 0 3px 6px 0 rgba(0, 0, 0, 0.12), 0 5px 12px 4px rgba(0, 0, 0, 0.09);
+    transition: all 0.3s;
+  }
+  
+  .projectCard:hover {
+    box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.16), 0 6px 16px 0 rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.09);
+  }
+  
+  .cardContent {
+    display: flex;
+    align-items: center;
+  }
+  
+  .fileIcon {
+    font-size: 24px;
+    color: #54A258;
+    margin-right: 16px;
+  }
+  
+  .newProjectCard {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #ffffff;
+    border: 2px dashed #54A258;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  
+  .newProjectCard:hover {
+    border-color: #54A258;
+    box-shadow: 0 0 10px rgba(84, 162, 88, 0.2);
+  }
+  
+  .plusIcon {
+    font-size: 35px;
+    color: #54A258;
+    margin-bottom: 16px;
+  }
+  
+  /* Override Ant Design styles */
+  :global(.ant-card-actions) {
+    background-color: #f0f2f5 !important;
+  }
+  
+  :global(.ant-btn-primary) {
+    background-color: #54A258 !important;
+    border-color: #54A258 !important;
+  }
+  
+  :global(.ant-btn-primary:hover),
+  :global(.ant-btn-primary:focus) {
+    background-color: #449349 !important;
+    border-color: #449349 !important;
+  }

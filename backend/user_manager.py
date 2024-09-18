@@ -94,11 +94,10 @@ class UserManager:
         token = self.github_proxy.authorize_access_token()
         resp = self.github_proxy.get("user", token=token)
         profile = resp.json()
+        print("Profile:", profile)
         session["user_id"] = f"github_{profile['id']}"
         session["user_type"] = "github"
-        session["user_name"] = profile.get(
-            "name", profile.get("login", "GitHub User")
-        )
+        session["user_name"] = profile.get('login')
         session["avatar_url"] = profile.get("avatar_url")
         print("Session after:", session)
         self.create_user_workspace(session["user_id"])
