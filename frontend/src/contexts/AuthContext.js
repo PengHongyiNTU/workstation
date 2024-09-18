@@ -22,7 +22,6 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await api.get('/api/user/info');
-      console.log('User info:', response.data);
       setUser(response.data);
     } catch (error) {
       console.error('Failed to fetch user info:', error);

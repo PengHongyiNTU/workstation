@@ -35,7 +35,7 @@ const AppCanvas = () => {
         borderRadius: '8px',
         overflow: 'hidden'
       }}
-      bodyStyle={{ padding: 0, height: '100%' }}
+      styls={{ height: '100%', padding: 0 }}
     >
       <ReactFlow
         nodes={nodes}

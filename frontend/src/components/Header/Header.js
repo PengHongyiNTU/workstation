@@ -1,24 +1,37 @@
 import React from "react";
 import { Layout, Menu, Space } from "antd";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import styles from "./Header.module.css";
 import GithubButton from "../GithubButton/GithubButton";
 import UserProfile from "../UserProfile/UserProfile";
-
-
+import { useProject } from "../../contexts/ProjectContext";
 
 const { Header } = Layout;
 
-const AppHeader = ({ currentProject }) => {
+const AppHeader = () => {
+    const { currentProject } = useProject();
+    const location = useLocation();
+    const navigate = useNavigate();
+
+    const handleNavigation = (key) => {
+        if (key === '/canvas' && !currentProject) {
+            // Do nothing or show a message that a project needs to be opened first
+            return;
+        }
+        navigate(key);
+    };
+
     const navItems = [
         {
-            key: 'home',
+            key: '/',
             label: 'Home',
             icon: <span className="material-symbols-outlined">home</span>,
         },
         {
-            key: 'canvas',
+            key: '/canvas',
             label: 'Canvas',
             icon: <span className="material-symbols-outlined">automation</span>,
+            disabled: !currentProject,
         },
     ];
     
@@ -32,8 +45,9 @@ const AppHeader = ({ currentProject }) => {
 
             <Menu 
                 mode="horizontal" 
-                defaultSelectedKeys={['home']}
+                selectedKeys={[location.pathname]}
                 items={navItems}
+                onClick={({ key }) => handleNavigation(key)}
                 className={styles.menu}
             />
 

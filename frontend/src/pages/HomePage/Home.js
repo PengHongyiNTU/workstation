@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Modal, Input, message, Spin, Typography, Space} from 'antd';
+import { Card, Button, Modal, Input, message, Spin, Typography, Space, App } from 'antd';
 import { PlusOutlined, DeleteOutlined, FileOutlined } from '@ant-design/icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useProject } from '../../contexts/ProjectContext';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import styles from './Home.module.css';
-
 
 const API_URL = 'http://localhost:5000';
 const api = axios.create({
@@ -14,9 +15,10 @@ const api = axios.create({
 
 const { Title, Text } = Typography;
 
-
 const HomePage = () => {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { openProject, loading: projectLoading, error: projectError } = useProject();
+  const navigate = useNavigate();
   const [files, setFiles] = useState([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [newFileName, setNewFileName] = useState('');
@@ -27,6 +29,12 @@ const HomePage = () => {
       fetchFiles();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (projectError) {
+      message.error(projectError);
+    }
+  }, [projectError, message]);
 
   const fetchFiles = async () => {
     setFetchingFiles(true);
@@ -71,6 +79,16 @@ const HomePage = () => {
     }
   };
 
+  const handleOpenProject = async (filename) => {
+    try {
+      await openProject(filename);
+      navigate('/canvas');
+    } catch (error) {
+      console.error('Error opening project:', error);
+      message.error('Failed to open project');
+    }
+  };
+
   const formatDate = (dateString) => {
     const options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
     return new Date(dateString).toLocaleDateString(undefined, options);
@@ -80,7 +98,7 @@ const HomePage = () => {
     <Card 
       className={styles.projectCard}
       actions={[
-        <Button type="primary" onClick={() => {/* Add open functionality */}}>Open</Button>,
+        <Button type="primary" onClick={() => handleOpenProject(file.name)}>Open</Button>,
         <Button icon={<DeleteOutlined />} onClick={() => handleDeleteFile(file.name)} danger />
       ]}
     >
@@ -106,7 +124,7 @@ const HomePage = () => {
     </Card>
   );
 
-  if (loading) {
+  if (authLoading) {
     return <Spin size="large" />;
   }
 
@@ -115,31 +133,33 @@ const HomePage = () => {
   }
 
   return (
-    <div className={styles.homePage}>
-      <Title className={styles.welcome}>Welcome, {user.user_name || 'User'}!</Title>
-      {fetchingFiles ? (
-        <Spin size="large" />
-      ) : (
-        <div className={styles.projectGrid}>
-          <NewProjectCard />
-          {files.map(file => (
-            <ProjectCard key={file.name} file={file} />
-          ))}
-        </div>
-      )}
-      <Modal
-        title="Create New Project"
-        open={isModalVisible}
-        onOk={handleCreateFile}
-        onCancel={() => setIsModalVisible(false)}
-      >
-        <Input 
-          placeholder="Enter project name" 
-          value={newFileName}
-          onChange={(e) => setNewFileName(e.target.value)}
-        />
-      </Modal>
-    </div>
+    <App>
+      <div className={styles.homePage}>
+        <Title className={styles.welcome}>Welcome, {user.user_name || 'User'}!</Title>
+        {fetchingFiles || projectLoading ? (
+          <Spin size="large" />
+        ) : (
+          <div className={styles.projectGrid}>
+            <NewProjectCard />
+            {files.map(file => (
+              <ProjectCard key={file.name} file={file} />
+            ))}
+          </div>
+        )}
+        <Modal
+          title="Create New Project"
+          open={isModalVisible}
+          onOk={handleCreateFile}
+          onCancel={() => setIsModalVisible(false)}
+        >
+          <Input 
+            placeholder="Enter project name" 
+            value={newFileName}
+            onChange={(e) => setNewFileName(e.target.value)}
+          />
+        </Modal>
+      </div>
+    </App>
   );
 };
 
