@@ -6,6 +6,9 @@ from werkzeug.datastructures import FileStorage
 from typing import List, Dict
 
 
+FLOW_FILE_EXTENSION = ".flow.json"
+
+
 class FileExistsError(Exception):
     pass
 
@@ -43,13 +46,16 @@ class FileManager:
     def list_files(self, user_id: str) -> List[Dict[str, str]]:
         user_workspace = self.get_user_workspace(user_id)
         files = os.listdir(user_workspace)
-        # ignore metadata file
-        files = [f for f in files if f != "metadata.json"]
+        files = [
+            f
+            for f in files
+            if f.endswith(FLOW_FILE_EXTENSION) and f != "metadata.json"
+        ]
+
         metadata = self.load_metadata(user_id)
         return [
-            {"name": f, "last_edit": metadata.get(f, "Never")}
+            {"name": f.split(".")[0], "last_edit": metadata.get(f, "Never")}
             for f in files
-            if f != "metadata.json"
         ]
 
     def create_file(self, user_id: str, file: FileStorage) -> str:
@@ -58,35 +64,65 @@ class FileManager:
             raise ValueError("No selected file")
         else:
             filename = secure_filename(file.filename)
+            if not filename.endswith(FLOW_FILE_EXTENSION):
+                filename += FLOW_FILE_EXTENSION
         file_path = os.path.join(user_workspace, filename)
         if os.path.exists(file_path):
             raise FileExistsError(f"File {filename} already exists")
 
-        file.save(file_path)
+        # Create an empty valid JSON object if the file is empty
+        content = file.read().decode('utf-8').strip()
+        if not content:
+            content = json.dumps({"nodes": [], "edges": []})
+        else:
+            # Validate JSON content
+            try:
+                json.loads(content)
+            except json.JSONDecodeError:
+                raise ValueError("Invalid JSON content")
+
+        with open(file_path, 'w') as f:
+            f.write(content)
+
         self.update_last_edit_time(user_id, filename)
         return filename
 
-    def read_file(self, user_id: str, filename: str) -> str:
+    def read_file(self, user_id: str, filename: str) -> Dict:
         user_workspace = self.get_user_workspace(user_id)
+        if not filename.endswith(FLOW_FILE_EXTENSION):
+            filename += FLOW_FILE_EXTENSION
         file_path = os.path.join(user_workspace, secure_filename(filename))
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")
         with open(file_path, "r") as f:
-            content = f.read()
+            content = f.read().strip()
             self.update_last_edit_time(user_id, filename)
-            return content
+            if not content:
+                return {"nodes": [], "edges": []}
+            try:
+                return json.loads(content)
+            except json.JSONDecodeError:
+                raise ValueError(f"Invalid JSON content in file {filename}")
 
-    def update_file(self, user_id: str, filename: str, content: str) -> None:
+    def update_file(self, user_id: str, filename: str, content: Dict) -> None:
         user_workspace = self.get_user_workspace(user_id)
+        if not filename.endswith(FLOW_FILE_EXTENSION):
+            filename += FLOW_FILE_EXTENSION
         file_path = os.path.join(user_workspace, secure_filename(filename))
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")
+        try:
+            json_content = json.dumps(content)
+        except TypeError:
+            raise ValueError(f"Invalid JSON content for file {filename}")
         with open(file_path, "w") as f:
-            f.write(content)
+            f.write(json_content)
         self.update_last_edit_time(user_id, filename)
 
     def delete_file(self, user_id: str, filename: str) -> None:
         user_workspace = self.get_user_workspace(user_id)
+        if not filename.endswith(FLOW_FILE_EXTENSION):
+            filename += FLOW_FILE_EXTENSION
         file_path = os.path.join(user_workspace, secure_filename(filename))
         if not os.path.exists(file_path):
             raise FileNotFoundError(f"File {filename} not found")

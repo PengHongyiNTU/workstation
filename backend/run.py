@@ -170,7 +170,7 @@ def create_file():
         return jsonify({"error": str(e)}), 400
     except FileExistsError as e:
         logger.error(f"FileExistsError while creating file: {str(e)}")
-        return jsonify({"error": str(e)}), 409  # 409 Conflict
+        return jsonify({"error": str(e)}), 409
 
 
 @app.route("/api/files/<filename>", methods=["GET"])
@@ -186,6 +186,11 @@ def read_file(filename):
     except FileNotFoundError:
         logger.error(f"File {filename} not found for user {user_id}")
         return jsonify({"error": "File not found"}), 404
+    except ValueError as e:
+        logger.error(
+            f"Invalid JSON content in file {filename} for user {user_id}"
+        )
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/api/files/<filename>", methods=["PUT"])
@@ -193,7 +198,7 @@ def update_file(filename):
     if not user_manager:
         logger.error("User management is not available")
         return jsonify({"error": "User management is not available"}), 503
-    content = request.json.get("content", "")
+    content = request.json
     user_id = user_manager.get_user_id()
     try:
         file_manager.update_file(user_id, filename, content)
@@ -204,6 +209,11 @@ def update_file(filename):
             f"File {filename} not found for user {user_id} during update"
         )
         return jsonify({"error": "File not found"}), 404
+    except ValueError as e:
+        logger.error(
+            f"Invalid JSON content for file {filename} from user {user_id}"
+        )
+        return jsonify({"error": str(e)}), 400
 
 
 @app.route("/api/files/<filename>", methods=["DELETE"])

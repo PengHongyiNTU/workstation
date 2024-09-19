@@ -1,22 +1,20 @@
-import React, { useEffect, useCallback} from 'react';
+import React, { useEffect} from 'react';
 import { Layout, Spin, message, Breadcrumb, Card } from 'antd';
 import { useProject } from '../../contexts/ProjectContext';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AppSider from '../../components/Sider/Sider';
-import FlowEditor from '../../components/FlowEditor/FlowEditor';
+import FlowEditorWithProvider from '../../components/FlowEditor/FlowEditor';
 import styles from './Workstation.module.css';
 
 const { Content } = Layout;
 
 
-const Canvas = () => {
-  const { currentProject, projectContent, loading, error } = useProject();
+const Workstation = () => {
+  const { currentProject, loading, error } = useProject();
   const { user } = useAuth();
   const navigate = useNavigate();
-
-  console.log("currentProject", currentProject);
-
+  
   useEffect(() => {
     if (!currentProject) {
       navigate('/');
@@ -33,9 +31,6 @@ const Canvas = () => {
     return <Spin size="large" />;
   }
 
-  if (!currentProject || !projectContent) {
-    return null;
-  }
 
   const breadcrumbItems = [{
     title: user?.user_name || 'User'
@@ -60,7 +55,7 @@ const Canvas = () => {
             }}
           >
             <div className={styles.flowEditorContainer}>
-              <FlowEditor />
+              <FlowEditorWithProvider />
             </div>
           </Card>
         </Content>
@@ -69,4 +64,4 @@ const Canvas = () => {
   );
 };
 
-export default Canvas;
+export default Workstation;
