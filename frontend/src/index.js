@@ -4,7 +4,7 @@ import 'antd/dist/reset.css'
 import '@xyflow/react/dist/style.css'
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-
+import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

@@ -338,7 +338,7 @@ const FlowEditor = () => {
   );
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+    <div className="w-full h-full relative">
       <ReactFlow
         nodes={nodes}
         edges={edges}
